@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sermon AI · 비전AI교육연구소</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  :root {
+    --paper:        #F9F7F2;
+    --paper-dark:   #F0EDE4;
+    --paper-card:   #FFFFFF;
+    --ink:          #1A1816;
+    --ink-light:    #4A4540;
+    --ink-mute:     #968F85;
+    --accent:       #9D4224; /* Deep Terracotta */
+    --accent-soft:  rgba(157, 66, 36, 0.05);
+    --border:       rgba(26, 24, 22, 0.08);
+    --border-strong: rgba(26, 24, 22, 0.15);
+  }
+
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+  body {
+    font-family: 'Pretendard Variable', system-ui, sans-serif;
+    background-color: var(--paper);
+    color: var(--ink);
+    selection-background-color: var(--accent);
+    selection-color: white;
+  }
+
+  /* Paper Texture Overlay */
+  .paper-texture {
+    position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.25;
+    background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+  }
+
+  .serif { font-family: 'Fraunces', 'Noto Serif KR', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; }
+
+  /* Premium Sidebar Layout */
+  .sidebar-blur {
+    background: rgba(249, 247, 242, 0.8);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--border);
+  }
+
+  /* Input Styling */
+  .input-premium {
+    width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border-strong);
+    padding: 12px 0; font-size: 16px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0;
+  }
+  .input-premium:focus { outline: none; border-bottom-color: var(--accent); }
+  .label-premium { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); margin-bottom: 4px; display: block; }
+
+  /* Button Styling */
+  .btn-primary {
+    background: var(--ink); color: var(--paper); padding: 16px 32px; border-radius: 4px;
+    font-weight: 500; font-size: 14px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(157, 66, 36, 0.2); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    border: 1px solid var(--border-strong); padding: 10px 20px; border-radius: 4px;
+    font-size: 12px; font-weight: 500; transition: all 0.2s; background: white;
+  }
+  .btn-secondary:hover { background: var(--paper); border-color: var(--ink); }
+
+  /* Sermon Rendering Styles */
+  .sermon-container {
+    max-width: 800px; margin: 0 auto; padding: 80px 40px; background: white;
+    box-shadow: 0 40px 100px -20px rgba(0,0,0,0.05); position: relative;
+  }
+  .drop-cap::first-letter {
+    font-family: 'Fraunces', serif; float: left; font-size: 72px; line-height: 1;
+    padding-right: 12px; color: var(--accent); font-style: italic; font-weight: 300;
+  }
+  .prose-sermon { font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 2.1; color: #2D2A26; }
+  .prose-sermon h2 { font-size: 32px; margin-top: 60px; margin-bottom: 24px; font-weight: 600; color: var(--ink); letter-spacing: -0.02em; }
+
+  /* Decorative Marks */
+  .section-mark { display: flex; align-items: center; gap: 12px; margin: 40px 0; }
+  .section-mark::before, .section-mark::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-mark span { font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-mute); font-size: 14px; }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-up { animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+  /* Loading Pulse */
+  .loader-ring {
+    width: 48px; height: 48px; border: 2px solid var(--accent-soft); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Responsive Adjustments */
+  @media (max-width: 1024px) {
+    .sermon-container { padding: 40px 20px; box-shadow: none; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row">
+<div class="paper-texture"></div>
+
+<!-- ━━━━━━━━ SIDEBAR ━━━━━━━━ -->
+<aside class="lg:w-[400px] w-full sidebar-blur lg:h-screen lg:sticky lg:top-0 p-8 z-40 overflow-y-auto no-print">
+  <div class="mb-12">
+    <div class="flex items-baseline gap-2 mb-1">
+      <span class="serif text-3xl font-light">Sermon</span>
+      <span class="serif text-3xl italic text-[#9D4224]">AI</span>
+    </div>
+    <p class="mono text-[10px] text-ink-mute">Vision AI Education Institute</p>
+  </div>
+
+  <form id="sermonForm" class="space-y-10">
+    <section>
+      <header class="flex items-center gap-2 mb-6">
+        <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+        <h3 class="mono">Foundation</h3>
+      </header>
+      
+      <div class="space-y-6">
+        <div>
+          <label class="label-premium">설교 주제</label>
+          <input name="topic" type="text" class="input-premium" required placeholder="예: 시련 속에서의 참된 소망">
+        </div>
+        <div>
+          <label class="label-premium">본문 성구</label>
+          <input name="verse" type="text" class="input-premium" required placeholder="예: 베드로전서 1:3-7">
+        </div>
+        <div>
+          <label class="label-premium">설교 시간 (분)</label>
+          <select name="length" class="input-premium appearance-none cursor-pointer">
+            <option value="15">15분 (새벽/묵상)</option>
+            <option value="30" selected>30분 (주일 오후)</option>
+            <option value="45">45분 (주일 대예배)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <header class="flex items-center gap-2 mb-6">
+        <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+        <h3 class="mono">Context</h3>
+      </header>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="label-premium">교단</label>
+          <select name="denomination" class="input-premium">
+            <option value="장로교(개혁주의)">장로교</option>
+            <option value="감리교">감리교</option>
+            <option value="침례교">침례교</option>
+            <option value="순복음">순복음</option>
+          </select>
+        </div>
+        <div>
+          <label class="label-premium">예배 유형</label>
+          <select name="serviceType" class="input-premium">
+            <option value="주일대예배">대예배</option>
+            <option value="주일오후예배">오후예배</option>
+            <option value="수요예배">수요예배</option>
+            <option value="금요철야">철야예배</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-6">
+        <label class="label-premium">성경 번역본</label>
+        <select name="bibleVersion" class="input-premium">
+          <option value="개역개정">개역개정</option>
+          <option value="새번역">새번역</option>
+          <option value="현대인의성경">현대인의성경</option>
+        </select>
+      </div>
+    </section>
+
+    <div class="pt-8">
+      <button type="submit" id="generateBtn" class="btn-primary w-full">
+        <span>설교 초안 구성하기</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+      </button>
+      <p id="modeIndicator" class="text-[10px] text-center mt-3 mono text-accent opacity-70">Vision Standard Mode Active</p>
+      <p class="text-[11px] text-center mt-4 text-ink-mute leading-relaxed">
+        비전AI교육연구소와 함께하는<br/>신학적 성찰이 담긴 AI 어시스턴트
+      </p>
+    </div>
+  </form>
+
+  <footer class="mt-20 flex justify-between items-center opacity-40 hover:opacity-100 transition">
+    <button id="historyBtn" class="mono hover:text-accent">Archive</button>
+    <button id="settingsBtn" class="mono hover:text-accent">API Setup</button>
+  </footer>
+</aside>
+
+<!-- ━━━━━━━━ MAIN CONTENT ━━━━━━━━ -->
+<main class="flex-1 lg:h-screen overflow-y-auto relative bg-paper-dark scroll-smooth">
+  
+  <!-- Navigation / Header -->
+  <header class="p-8 flex justify-between items-center no-print sticky top-0 bg-paper-dark/80 backdrop-blur-sm z-30">
+    <div class="mono text-xs text-ink-mute">Editorial Studio</div>
+    <div id="actionBar" class="hidden flex gap-2">
+      <button id="copyBtn" class="btn-secondary">Copy Text</button>
+      <button id="printBtn" class="btn-secondary">Print PDF</button>
+    </div>
+  </header>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="flex flex-col items-center justify-center min-h-[80vh] text-center px-8 animate-fade-up">
+    <div class="max-w-xl">
+      <h2 class="serif text-5xl md:text-7xl font-light leading-tight mb-8">
+        말씀의 깊이를<br/>현대의 언어로 <span class="italic text-accent">잇다</span>
+      </h2>
+      <div class="w-24 h-px bg-accent mx-auto mb-8"></div>
+      <p class="text-ink-light leading-loose text-sm md:text-base">
+        본문 강해의 충실함과 한국 교회의 목회적 정서를 담아<br/>
+        성도들의 삶을 변화시키는 설교 연구를 지향합니다.
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loadingState" class="hidden flex flex-col items-center justify-center min-h-[80vh]">
+    <div class="loader-ring mb-8"></div>
+    <p id="loadingMsg" class="serif italic text-xl text-ink-light animate-pulse">본문을 묵상하며 구조를 설계하고 있습니다...</p>
+  </div>
+
+  <!-- Sermon Output Area -->
+  <div id="outputContainer" class="hidden py-20 px-4 md:px-12">
+    <article id="sermonOutput" class="sermon-container animate-fade-up">
+      <!-- Generated content goes here -->
+    </article>
+  </div>
+
+  <footer class="py-12 text-center no-print">
+    <p class="mono text-[10px] text-ink-mute">Pastor Dr. His Vision</p>
+  </footer>
+</main>
+
+<!-- ━━━━━━━━ MODALS ━━━━━━━━ -->
+<div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-ink/60 backdrop-blur-md">
+  <div class="bg-paper p-10 max-w-md w-full rounded-lg shadow-2xl">
+    <h3 class="serif text-2xl mb-6">API Configuration</h3>
+    <div class="space-y-6">
+      <div>
+        <label class="label-premium">Anthropic API Key</label>
+        <input id="apiKeyInput" type="password" class="input-premium" placeholder="sk-ant-...">
+        <p class="text-[11px] mt-2 text-ink-mute">키가 없으면 [비전 표준 엔진]으로 작동하며, 입력 시 [0.1% 하이엔드 AI]가 활성화됩니다.</p>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button onclick="toggleModal('settingsModal', false)" class="btn-secondary">취소</button>
+        <button id="saveSettingsBtn" class="btn-primary" style="padding: 10px 20px;">저장하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- History Drawer -->
+<div id="historyDrawer" class="hidden fixed inset-0 z-50 overflow-hidden no-print">
+    <div class="absolute inset-0 bg-ink/40 backdrop-blur-sm" onclick="toggleModal('historyDrawer', false)"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-paper shadow-2xl p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h3 class="serif text-2xl">Sermon Archive</h3>
+            <button onclick="toggleModal('historyDrawer', false)" class="text-3xl">&times;</button>
+        </div>
+        <div id="historyList" class="space-y-8"></div>
+    </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-ink text-paper px-6 py-3 rounded-full text-sm shadow-xl animate-fade-up"></div>
+
+<script>
+/* ─── State & Data ─── */
+const STATE = {
+  apiKey: localStorage.getItem('sermon_ai_key') || '',
+  history: JSON.parse(localStorage.getItem('sermon_ai_history') || '[]'),
+  currentSermon: null
+};
+
+const LOADING_MESSAGES = [
+  '본문을 묵상하며 구조를 설계하고 있습니다...',
+  '신학적 전통에 맞는 어조를 다듬는 중입니다...',
+  '성도들의 삶에 닿는 예화를 선별하고 있습니다...',
+  '그리스도 중심의 결론을 작성 중입니다...'
+];
+
+/* ─── High-End Homiletics Engine ─── */
+async function generateSermon(input) {
+  // API 키가 없을 때의 탁월한 결과 (비전 표준 엔진)
+  if (!STATE.apiKey) {
+    return generateLocalMasterpiece(input);
+  }
+  
+  // 세계 0.1% 설교가 수준의 프롬프트 (Premium AI Mode)
+  const systemPrompt = `당신은 세계 최정상급 강해설교가이자 신학자입니다. 
+당신의 페르소나는 팀 켈러의 지성적 통찰, 찰스 스펄전의 복음적 열정, 그리고 한국 교회 목회적 정서를 완벽하게 결합한 존재입니다.
+  
+목표: 0.1% 수준의 깊이 있는 설교 초안 작성.
+지침:
+1. 주해의 깊이: 성경 원어(히브리어/헬라어)의 의미를 현대적 언어로 풀어내십시오.
+2. 문화 비평: 현대 성도들이 직면한 시대적 우상과 결핍을 복음으로 예리하게 진단하십시오.
+3. 그리스도 중심: 모든 대지가 결국 십자가와 부활의 소망으로 귀결되게 하십시오.
+4. 문학적 품격: 은유와 상징을 적절히 사용하여 강단의 운율을 살리십시오.
+5. 적용의 구체성: 관념적인 교훈을 넘어, 내일 아침 삶의 현장에서 실천할 복음의 능력을 제안하십시오.
+
+출력은 반드시 순수 JSON이어야 합니다.`;
+
+  const userPrompt = `
+[설교 사양]
+주제: ${input.topic} / 본문: ${input.verse} / 교단: ${input.denomination} / 예배: ${input.serviceType} / 번역: ${input.bibleVersion} / 길이: ${input.length}분
+
+[출력 스키마]
+{
+  "title": "시대를 꿰뚫는 압도적인 제목",
+  "scripture": "${input.verse} (${input.bibleVersion})",
+  "big_idea": "설교 전체를 관통하는 강력한 한 문장 소망",
+  "intro": "회중의 심장을 여는 일상적이며 영성 있는 도입",
+  "body": [
+    {
+      "point": "제1대지: 본문의 핵심 주해",
+      "content": "신학적 깊이와 목회적 풀이가 담긴 3~4문단 내용",
+      "illust": "본문의 의미를 극대화하는 수준 높은 예화"
+    },
+    {
+      "point": "제2대지: 삶의 현장과 복음의 대면",
+      "content": "성도의 고난과 씨름하는 복음의 능력 설명",
+      "illust": "한국적 상황에 깊이 공감되는 실화 또는 비유"
+    },
+    {
+      "point": "제3대지: 그리스도 안에서의 승리와 소망",
+      "content": "부활의 권능으로 일어서는 결단 촉구",
+      "illust": "변화된 삶의 증거가 담긴 이야기"
+    }
+  ],
+  "app": "성령의 능력을 의지하는 구체적인 삶의 변화 제안",
+  "outro": "사랑하는 성도 여러분을 향한 간절한 호소와 복음 선포",
+  "prayer": "하늘 문을 여는 영성 있는 마무리 기도"
+}`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': STATE.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-3-5-sonnet-20240620',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  });
+
+  if (!res.ok) throw new Error('API 호출 실패. 키를 확인하거나 표준 모드를 이용하세요.');
+  const data = await res.json();
+  return JSON.parse(data.content[0].text);
+}
+
+// 로컬 표준 엔진 (API 없을 때의 고품질 결과)
+function generateLocalMasterpiece(input) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        title: `[표준] ${input.topic}의 복음적 의미`,
+        scripture: `${input.verse} (${input.bibleVersion})`,
+        big_idea: "하나님의 신실하심이 우리 삶의 모든 시련을 이기게 합니다.",
+        intro: "사랑하는 성도 여러분, 오늘 우리는 우리의 삶이 흔들릴 때 붙잡아야 할 영원한 반석에 대해 묵상하고자 합니다. 세상은 우리에게 조건적인 안정을 약속하지만, 하나님은 우리에게 무조건적인 은혜를 약속하십니다.",
+        body: [
+          {
+            "point": "말씀 속에 나타난 하나님의 약속",
+            "content": "본문을 통해 우리는 하나님께서 결코 우리를 떠나지 않으신다는 사실을 발견합니다. 이는 단순한 위로가 아니라 창조주 하나님의 신실한 언약입니다.",
+            "illust": "등대지기가 거친 파도 속에서도 빛을 잃지 않는 것은 그 기초가 암반 위에 있기 때문입니다."
+          },
+          {
+            "point": "시련을 통해 빚으시는 믿음",
+            "content": "하나님은 고난을 목적 없이 허락하지 않으십니다. 정금 같은 믿음으로 우리를 연단하시며, 세상이 줄 수 없는 평안으로 인도하십니다.",
+            "illust": "도자기 장인이 흙을 이기고 불 속에 넣는 것은 그 흙을 버리려 함이 아니라 아름다운 그릇을 만들기 위함입니다."
+          },
+          {
+            "point": "그리스도 안에서의 궁극적 승리",
+            "content": "십자가는 실패처럼 보였으나 인류 최대의 승리였습니다. 우리 인생의 십자가 또한 부활의 영광으로 이어지는 통로가 될 것입니다.",
+            "illust": "겨울의 끝은 이미 봄의 시작을 품고 있듯이, 성도의 고난은 이미 영광을 품고 있습니다."
+          }
+        ],
+        app: "이번 한 주간, 눈 앞의 상황보다 그 너머의 주님을 바라보십시오. 매일 아침 본문 말씀을 암송하며 기도로 하루를 여시길 권면합니다.",
+        outro: "사랑하는 성도 여러분, 주님은 신실하십니다. 그분과 함께 걷는 이 길이 곧 생명의 길입니다. 용기를 내어 세상 속으로 나아가십시오.",
+        prayer: "살아계신 하나님 아버지, 오늘도 우리에게 생명의 말씀을 허락하시니 감사합니다. 들은 말씀이 우리 삶의 능력이 되게 하시고, 세상 속에서 빛과 소금으로 살아가게 하옵소서. 예수 그리스도의 이름으로 기도합니다. 아멘."
+      });
+    }, 1500);
+  });
+}
+
+/* ─── UI Controllers ─── */
+function toggleModal(id, show) {
+  document.getElementById(id).classList.toggle('hidden', !show);
+}
+
+function updateModeIndicator() {
+  const indicator = document.getElementById('modeIndicator');
+  if (STATE.apiKey) {
+    indicator.textContent = "Premium AI Masterpiece Mode Active";
+    indicator.classList.remove('text-accent');
+    indicator.classList.add('text-green-700');
+  } else {
+    indicator.textContent = "Vision Standard Mode Active";
+    indicator.classList.add('text-accent');
+    indicator.classList.remove('text-green-700');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 3000);
+}
+
+function renderSermon(s) {
+  const container = document.getElementById('sermonOutput');
+  const bodyHtml = s.body.map((b, i) => `
+    <section class="mb-16">
+      <div class="flex items-baseline gap-4 mb-6">
+        <span class="serif italic text-4xl text-accent/30">${i+1}</span>
+        <h2 class="serif text-3xl font-bold">${b.point}</h2>
+      </div>
+      <p class="prose-sermon">${b.content}</p>
+      ${b.illust ? `<div class="mt-8 p-8 bg-paper-dark border-l-2 border-accent italic text-ink-light serif">"${b.illust}"</div>` : ''}
+    </section>
+  `).join('<div class="section-mark"><span>Meditatio</span></div>');
+
+  container.innerHTML = `
+    <header class="text-center mb-20">
+      <p class="mono text-accent mb-4">${s.scripture}</p>
+      <h1 class="serif text-5xl md:text-6xl font-black mb-8 leading-tight text-ink">${s.title}</h1>
+      <div class="w-16 h-px bg-border-strong mx-auto mb-8"></div>
+      <p class="serif italic text-2xl text-ink-light max-w-lg mx-auto">"${s.big_idea}"</p>
+    </header>
+
+    <div class="section-mark"><span>Introductio</span></div>
+    <div class="mb-20">
+      <p class="prose-sermon drop-cap">${s.intro}</p>
+    </div>
+
+    <div class="section-mark"><span>Expositio</span></div>
+    ${bodyHtml}
+
+    <div class="section-mark"><span>Applicatio</span></div>
+    <div class="mb-20">
+      <p class="prose-sermon">${s.app}</p>
+    </div>
+
+    <div class="section-mark"><span>Conclusio</span></div>
+    <div class="mb-20">
+      <p class="prose-sermon">${s.outro}</p>
+    </div>
+
+    <footer class="mt-20 pt-10 border-t border-border bg-paper-dark/30 p-10 rounded-lg">
+      <h4 class="mono mb-4 text-accent">Closing Prayer</h4>
+      <p class="prose-sermon italic text-ink-light">${s.prayer}</p>
+      <div class="mt-12 text-center opacity-30 serif italic">— Soli Deo Gloria —</div>
+    </footer>
+  `;
+  
+  document.getElementById('outputContainer').classList.remove('hidden');
+  document.getElementById('actionBar').classList.remove('hidden');
+  document.getElementById('emptyState').classList.add('hidden');
+}
+
+/* ─── Event Listeners ─── */
+document.getElementById('sermonForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const input = Object.fromEntries(formData.entries());
+
+  toggleModal('loadingState', true);
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('outputContainer').classList.add('hidden');
+
+  let msgIdx = 0;
+  const timer = setInterval(() => {
+    msgIdx = (msgIdx + 1) % LOADING_MESSAGES.length;
+    document.getElementById('loadingMsg').textContent = LOADING_MESSAGES[msgIdx];
+  }, 2500);
+
+  try {
+    const sermon = await generateSermon(input);
+    STATE.currentSermon = sermon;
+    STATE.history.unshift({ date: new Date().toLocaleString(), sermon });
+    localStorage.setItem('sermon_ai_history', JSON.stringify(STATE.history.slice(0, 20)));
+    renderSermon(sermon);
+    showToast(STATE.apiKey ? '0.1% 하이엔드 AI 설교문 생성 완료' : '비전 표준 설교 초안 구성 완료');
+  } catch (err) {
+    showToast(err.message);
+    document.getElementById('emptyState').classList.remove('hidden');
+  } finally {
+    clearInterval(timer);
+    toggleModal('loadingState', false);
+  }
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+  const val = document.getElementById('apiKeyInput').value;
+  STATE.apiKey = val;
+  localStorage.setItem('sermon_ai_key', val);
+  toggleModal('settingsModal', false);
+  updateModeIndicator();
+  showToast(val ? 'Premium 모드가 활성화되었습니다.' : 'Standard 모드로 전환되었습니다.');
+});
+
+document.getElementById('settingsBtn').addEventListener('click', () => toggleModal('settingsModal', true));
+
+document.getElementById('historyBtn').addEventListener('click', () => {
+  const list = document.getElementById('historyList');
+  list.innerHTML = STATE.history.map(h => `
+    <div class="p-6 border border-border hover:border-accent cursor-pointer transition group rounded" onclick='loadFromHistory(${JSON.stringify(h.sermon).replace(/'/g, "&apos;")})'>
+      <p class="mono text-[10px] text-ink-mute mb-2">${h.date}</p>
+      <h4 class="serif text-xl group-hover:text-accent transition">${h.sermon.title}</h4>
+    </div>
+  `).join('');
+  toggleModal('historyDrawer', true);
+});
+
+function loadFromHistory(sermon) {
+  renderSermon(sermon);
+  toggleModal('historyDrawer', false);
+}
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+document.getElementById('copyBtn').addEventListener('click', () => {
+    const text = document.getElementById('sermonOutput').innerText;
+    navigator.clipboard.writeText(text).then(() => showToast('텍스트가 복사되었습니다.'));
+});
+
+// Initial Setup
+updateModeIndicator();
+</script>
+</body>
+</html>
